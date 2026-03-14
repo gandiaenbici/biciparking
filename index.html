@@ -164,11 +164,21 @@
     userCoords = [lat, lng];
     if (!map) {
       map = L.map('map', { zoomControl: true }).setView(userCoords, 16);
-      // MAPA ESTÁNDAR DE OPENSTREETMAP
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
       }).addTo(map);
       parkingLayer.addTo(map);
+
+      // EVENTOS DE AUTO-RECARGA Y FIJACIÓN DEL CÍRCULO
+      map.on('move', () => {
+        const center = map.getCenter();
+        if (radiusCircle) radiusCircle.setLatLng(center);
+        updateStatsCoords(center.lat, center.lng);
+      });
+
+      map.on('moveend', () => {
+        fetchParkings();
+      });
     }
 
     const userIcon = L.divIcon({
@@ -181,10 +191,9 @@
     if (userMarker) userMarker.setLatLng(userCoords);
     else userMarker = L.marker(userCoords, { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
 
-    if (radiusCircle) radiusCircle.setLatLng(userCoords);
+    if (radiusCircle) radiusCircle.setLatLng(map.getCenter());
     else {
-      // BORDE DE RADIO EN ROJO
-      radiusCircle = L.circle(userCoords, {
+      radiusCircle = L.circle(map.getCenter(), {
         radius: parseInt(document.getElementById('radiusSelect').value),
         color: '#ff0000',
         fillColor: '#ff0000',
@@ -211,9 +220,10 @@
 
   async function fetchParkings() {
     const radius = document.getElementById('radiusSelect').value;
+    const center = map.getCenter();
     showOverlay();
 
-    const query = `[out:json][timeout:25];(node["amenity"="bicycle_parking"](around:${radius},${userCoords[0]},${userCoords[1]});way["amenity"="bicycle_parking"](around:${radius},${userCoords[0]},${userCoords[1]}););out center;`;
+    const query = `[out:json][timeout:25];(node["amenity"="bicycle_parking"](around:${radius},${center.lat},${center.lng});way["amenity"="bicycle_parking"](around:${radius},${center.lat},${center.lng}););out center;`;
     
     try {
       const res = await fetch('https://overpass-api.de/api/interpreter', {
@@ -249,7 +259,7 @@
       const tags = el.tags || {};
       const relevantKeys = ["bicycle_parking", "capacity", "covered", "surveillance", "operator"];
       
-      let rows = `<div class="tag-row"><span class="tag-key">Distancia</span><span>${dist}</span></div>`;
+      let rows = `<div class="tag-row"><span class="tag-key">De tu GPS</span><span>${dist}</span></div>`;
       
       relevantKeys.forEach(k => {
         if (tags[k]) {
