@@ -44,7 +44,8 @@
 
     .brand-name { font-size: 1.2rem; font-weight: 800; color: #fff; }
 
-    select {
+    /* Estilos para los botones y selectores */
+    .btn-ui {
       background: var(--dark);
       color: var(--lime);
       border: 1px solid var(--border);
@@ -52,7 +53,38 @@
       border-radius: 6px;
       font-family: 'Space Mono', monospace;
       font-size: 0.75rem;
+      cursor: pointer;
       outline: none;
+    }
+
+    /* Posicionamiento del selector (Inferior Izquierda) */
+    .control-bottom-left {
+      position: absolute;
+      bottom: 2rem;
+      left: 1.5rem;
+      z-index: 1100;
+    }
+
+    /* Posicionamiento del botón de centrado (Inferior Derecha) */
+    .control-bottom-right {
+      position: absolute;
+      bottom: 2rem;
+      right: 1.5rem;
+      z-index: 1100;
+    }
+
+    .fab-btn {
+      width: 50px;
+      height: 50px;
+      background: var(--lime);
+      color: var(--dark);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      font-size: 1.5rem;
+      border: none;
       cursor: pointer;
     }
 
@@ -115,12 +147,7 @@
 
 <header>
   <div class="brand-name">BiciParking</div>
-  <select id="radiusSelect" onchange="handleRadiusChange()">
-    <option value="500" selected>500 m</option>
-    <option value="2000">2 km</option>
-    <option value="5000">5 km</option>
-    <option value="10000">10 km</option>
-  </select>
+  <button class="btn-ui" onclick="fetchParkings()">RECARGAR 🔄</button>
 </header>
 
 <div id="statsBar">
@@ -130,6 +157,20 @@
 
 <div id="map-wrapper">
   <div id="map"></div>
+
+  <div class="control-bottom-left">
+    <select id="radiusSelect" class="btn-ui" onchange="handleRadiusChange()">
+      <option value="500" selected>500 m</option>
+      <option value="2000">2 km</option>
+      <option value="5000">5 km</option>
+      <option value="10000">10 km</option>
+    </select>
+  </div>
+
+  <div class="control-bottom-right">
+    <button class="fab-btn" onclick="recenterMap()" title="Centrar ubicación">🎯</button>
+  </div>
+
   <div id="overlay">
     <div class="loader-ring"></div>
     <div style="margin-top:10px; font-size:0.7rem; color:var(--lime); letter-spacing: 2px;">ESCANEANDO ÁREA...</div>
@@ -169,7 +210,6 @@
       }).addTo(map);
       parkingLayer.addTo(map);
 
-      // EVENTOS DE AUTO-RECARGA Y FIJACIÓN DEL CÍRCULO
       map.on('move', () => {
         const center = map.getCenter();
         if (radiusCircle) radiusCircle.setLatLng(center);
@@ -214,6 +254,15 @@
       err => { fallback(); },
       { enableHighAccuracy: true, timeout: 5000 }
     );
+  }
+
+  // Nueva función para centrar el mapa
+  function recenterMap() {
+    if (userCoords) {
+      map.setView(userCoords, 16);
+    } else {
+      getLocation();
+    }
   }
 
   function fallback() { initMap(40.4168, -3.7038); }
