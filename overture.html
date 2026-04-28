@@ -322,8 +322,10 @@
     const center = map.getCenter();
     showOverlay();
 
-    // Se aumenta el timeout a 60 para soportar el radio de 5km sin errores
-    const query = `[out:json][timeout:60];(node["amenity"="bicycle_parking"](around:${radius},${center.lat},${center.lng});way["amenity"="bicycle_parking"](around:${radius},${center.lat},${center.lng}););out center;`;
+    // Timeout dinámico: 60s para 5km, 25s para el resto
+    const timeoutValue = (radius == "5000") ? 60 : 25;
+
+    const query = `[out:json][timeout:${timeoutValue}];(node["amenity"="bicycle_parking"](around:${radius},${center.lat},${center.lng});way["amenity"="bicycle_parking"](around:${radius},${center.lat},${center.lng}););out center;`;
     
     try {
       const res = await fetch('https://overpass-api.de/api/interpreter', {
@@ -392,7 +394,7 @@
   function handleRadiusChange() {
     const r = parseInt(document.getElementById('radiusSelect').value);
     radiusCircle.setRadius(r);
-    // Ajuste de zoom: 250m -> 17, 500m -> 16, 2km -> 14, 5km -> 12
+    // Zoom adaptado: 250m (17), 500m (16), 2km (14), 5km (12)
     const zoom = r <= 250 ? 17 : r <= 500 ? 16 : r <= 2000 ? 14 : 12;
     map.setZoom(zoom);
     fetchParkings();
