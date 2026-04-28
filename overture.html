@@ -199,10 +199,10 @@
 
   <div class="control-bottom-left">
     <select id="radiusSelect" class="btn-ui" onchange="handleRadiusChange()">
+      <option value="250">250 m</option>
       <option value="500" selected>500 m</option>
       <option value="2000">2 km</option>
       <option value="5000">5 km</option>
-      <option value="10000">10 km</option>
     </select>
   </div>
 
@@ -231,7 +231,7 @@
     "surveillance": "Vigilancia",
     "yes": "Sí",
     "no": "No",
-    "stands": "U invertida", // CAMBIO: Solo muestra "U invertida"
+    "stands": "U invertida", 
     "wall_loops": "Soportes de pared",
     "sheffield": "U invertida (Sheffield)",
     "anchors": "Anclajes",
@@ -322,7 +322,8 @@
     const center = map.getCenter();
     showOverlay();
 
-    const query = `[out:json][timeout:25];(node["amenity"="bicycle_parking"](around:${radius},${center.lat},${center.lng});way["amenity"="bicycle_parking"](around:${radius},${center.lat},${center.lng}););out center;`;
+    // Se aumenta el timeout a 60 para soportar el radio de 5km sin errores
+    const query = `[out:json][timeout:60];(node["amenity"="bicycle_parking"](around:${radius},${center.lat},${center.lng});way["amenity"="bicycle_parking"](around:${radius},${center.lat},${center.lng}););out center;`;
     
     try {
       const res = await fetch('https://overpass-api.de/api/interpreter', {
@@ -391,7 +392,9 @@
   function handleRadiusChange() {
     const r = parseInt(document.getElementById('radiusSelect').value);
     radiusCircle.setRadius(r);
-    map.setZoom(r <= 500 ? 16 : 14);
+    // Ajuste de zoom: 250m -> 17, 500m -> 16, 2km -> 14, 5km -> 12
+    const zoom = r <= 250 ? 17 : r <= 500 ? 16 : r <= 2000 ? 14 : 12;
+    map.setZoom(zoom);
     fetchParkings();
   }
 
